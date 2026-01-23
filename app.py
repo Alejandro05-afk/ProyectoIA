@@ -2,10 +2,51 @@ import streamlit as st
 
 # -------- CONFIGURACIÓN --------
 st.set_page_config(
+
     page_title="ElectroShop",
     page_icon="💻",
     layout="wide"
 )
+st.markdown("""
+<style>
+
+/* Fondo general */
+.stApp {
+    background: linear-gradient(135deg, #0F172A, #020617);
+    color: white;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background-color: #020617;
+}
+
+/* Tarjetas */
+.product-card {
+    background-color: #020617;
+    padding: 16px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,173,181,0.4);
+    margin-bottom: 25px;
+}
+
+/* Botones Streamlit */
+.stButton > button {
+    background-color: #00ADB5 !important;
+    color: black !important;
+    border-radius: 10px !important;
+    font-weight: bold !important;
+}
+
+/* Títulos */
+h1, h2, h3 {
+    color: #00ADB5 !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
 
 # -------- ESTADO --------
 if "carrito" not in st.session_state:
@@ -101,28 +142,21 @@ if pagina == "Inicio":
 elif pagina == "Productos":
     st.header("📦 Productos disponibles")
 
-    # Inicializar carrito si no existe
-    if "carrito" not in st.session_state:
-        st.session_state.carrito = []
-
     categoria = st.selectbox(
         "Filtrar por categoría",
-        ["Todos", "Memoria", "Almacenamiento", "Tarjetas Gráficas", "Accesorios","Monitores"]
+        ["Todos", "Memoria", "Almacenamiento", "Tarjetas Gráficas", "Accesorios", "Monitores"]
     )
 
     cols = st.columns(3)
-    index = 0  # contador independiente
+    index = 0
 
     for producto in productos:
         if categoria == "Todos" or producto["categoria"] == categoria:
             with cols[index % 3]:
 
-                # 👉 IMAGEN
-                st.image(
-                    producto["imagen"],
-                    use_container_width=True
-                )
+                st.markdown("<div class='product-card'>", unsafe_allow_html=True)
 
+                st.image(producto["imagen"], use_container_width=True)
                 st.subheader(producto["nombre"])
                 st.caption(producto["categoria"])
                 st.write(f"💲 **${producto['precio']}**")
@@ -134,7 +168,10 @@ elif pagina == "Productos":
                     st.session_state.carrito.append(producto)
                     st.success("Producto agregado al carrito")
 
+                st.markdown("</div>", unsafe_allow_html=True)
+
             index += 1
+
 
 
 # -------- PÁGINA CARRITO --------
