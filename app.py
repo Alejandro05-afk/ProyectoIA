@@ -1,4 +1,5 @@
 import streamlit as st
+import requests
 
 # -------- CONFIGURACIÓN --------
 st.set_page_config(
@@ -53,22 +54,24 @@ header[data-testid="stHeader"] {
     box-shadow: 0 0 30px rgba(0,173,181,0.6);
 }
 
-/* Botones */
-.stButton > button {
+/* Botones compactos +/- */
+button[data-testid="baseButton-secondary"] {
     background: linear-gradient(135deg, #00ADB5, #00868c) !important;
     color: white !important;
-    border-radius: 10px !important;
+    border-radius: 6px !important;
     font-weight: bold !important;
     border: none !important;
-    padding: 10px 24px !important;
-    transition: all 0.3s ease !important;
-    width: 100% !important;
+    padding: 4px 12px !important;
+    transition: all 0.2s ease !important;
+    width: auto !important;
+    min-width: 36px !important;
+    font-size: 1.2em !important;
+    line-height: 1.2 !important;
 }
 
-.stButton > button:hover {
+button[data-testid="baseButton-secondary"]:hover {
     background: linear-gradient(135deg, #00c9d1, #00ADB5) !important;
-    box-shadow: 0 0 15px rgba(0,173,181,0.6) !important;
-    transform: scale(1.05) !important;
+    transform: scale(1.1) !important;
 }
 
 /* Títulos */
@@ -175,7 +178,6 @@ hr {
 </style>
 """, unsafe_allow_html=True)
 
-
 # -------- ESTADO --------
 if "carrito" not in st.session_state:
     st.session_state.carrito = []
@@ -241,6 +243,35 @@ productos = [
     }
 ]
 
+API_BASE_URL = "http://localhost:8000"
+
+def _fetch_products_from_api():
+    try:
+        _resp = requests.get(f"{API_BASE_URL}/products/", params={"per_page": 100}, timeout=3)
+        if _resp.status_code == 200:
+            _data = _resp.json()
+            if isinstance(_data, dict) and _data.get("products"):
+                return _data["products"]
+    except Exception:
+        pass
+    return None
+
+def _product_key(p: dict) -> str:
+    if not isinstance(p, dict):
+        return ""
+    return str(p.get("_id") or p.get("id") or p.get("nombre") or "")
+
+if "productos" not in st.session_state:
+    st.session_state.productos = productos
+
+try:
+    _api_products = _fetch_products_from_api()
+    if _api_products:
+        st.session_state.productos = _api_products
+except Exception:
+    pass
+
+productos = st.session_state.productos
 
 # -------- SIDEBAR --------
 st.sidebar.title("🛒 ElectroShop")
@@ -271,6 +302,13 @@ elif pagina == "Productos":
         st.success(st.session_state.mensaje)
         st.session_state.mensaje = None
 
+    if st.button("Actualizar productos"):
+        _api_products = _fetch_products_from_api()
+        if _api_products:
+            st.session_state.productos = _api_products
+            productos = st.session_state.productos
+        st.rerun()
+
     categoria = st.selectbox(
         "Filtrar por categoría",
         ["Todos", "Memoria", "Almacenamiento", "Tarjetas Gráficas", "Accesorios", "Monitores"]
@@ -291,11 +329,24 @@ elif pagina == "Productos":
                     st.caption(producto["categoria"])
                     st.write(f"💲 **${producto['precio']}**")
 
-                    if st.button("Agregar 🛒", key=f"add_{producto['nombre']}_{i}_{j}"):
+                    stock = producto.get("stock")
+                    if stock is not None:
+                        if stock <= 0:
+                            st.error("Sin stock")
+                        elif stock <= 5:
+                            st.warning(f"Stock bajo: {stock}")
+                        else:
+                            st.write(f"Stock: {stock}")
+
+                    disabled_add = stock is not None and stock <= 0
+                    if st.button(
+                        "Agregar 🛒",
+                        key=f"add_{producto['nombre']}_{i}_{j}",
+                        disabled=disabled_add,
+                    ):
                         st.session_state.carrito.append(producto)
                         st.session_state.mensaje = f"✅ {producto['nombre']} agregado al carrito"
                         st.rerun()
-
 
 # -------- PÁGINA CARRITO --------
 elif pagina == "Carrito":
@@ -304,37 +355,120 @@ elif pagina == "Carrito":
     if not st.session_state.carrito:
         st.info("Tu carrito está vacío")
     else:
+        grouped = {}
+        order = []
+        for p in st.session_state.carrito:
+            k = _product_key(p)
+            if k not in grouped:
+                grouped[k] = {"producto": p, "qty": 0}
+                order.append(k)
+            grouped[k]["qty"] += 1
+
         total = 0
-        
-        for i, producto in enumerate(st.session_state.carrito):
-            col1, col2 = st.columns([3, 1])
+        for idx, k in enumerate(order):
+            producto = grouped[k]["producto"]
+            qty = grouped[k]["qty"]
+            precio_unit = producto.get("precio", 0)
+
+            col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
             with col1:
-                st.write(f"✔ **{producto['nombre']}**")
+                st.write(f"✔ **{producto.get('nombre', '')}**")
+
             with col2:
-                st.write(f"**${producto['precio']}**")
-            
-            total += producto["precio"]
-            
-            if i < len(st.session_state.carrito) - 1:
+                st.write(f"x{qty}")
+
+            with col3:
+                if st.button("➖", key=f"dec_{k}", help="Quitar 1"):
+                    for i, item in enumerate(st.session_state.carrito):
+                        if _product_key(item) == k:
+                            del st.session_state.carrito[i]
+                            break
+                    st.rerun()
+
+            stock = producto.get("stock")
+            disabled_inc = stock is not None and qty >= stock
+            with col4:
+                if st.button("➕", key=f"inc_{k}", disabled=disabled_inc, help="Agregar 1"):
+                    st.session_state.carrito.append(producto)
+                    st.rerun()
+
+            subtotal = float(precio_unit) * qty
+            total += subtotal
+            with col5:
+                st.write(f"**${subtotal}**")
+
+            if idx < len(order) - 1:
                 st.divider()
 
         st.divider()
         st.subheader(f"💰 Total a pagar: ${total}")
 
         if st.button("Finalizar compra"):
-            st.session_state.carrito.clear()
-            st.success("Compra realizada con éxito 🎉")
-            st.balloons()
+            name_to_id = {}
+            for p in productos:
+                if isinstance(p, dict) and p.get("nombre") and (p.get("_id") or p.get("id")):
+                    name_to_id[p["nombre"]] = p.get("_id") or p.get("id")
 
-            
-# -------- CHATBOT --------
+            counts = {}
+            missing_ids = []
+            for p in st.session_state.carrito:
+                pid = p.get("_id") or p.get("id") or name_to_id.get(p.get("nombre", ""))
+                if not pid:
+                    missing_ids.append(p.get("nombre", "(sin nombre)"))
+                    continue
+                counts[pid] = counts.get(pid, 0) + 1
+
+            ok = True
+            if missing_ids:
+                ok = False
+                st.error("No se pudo actualizar stock para: " + ", ".join(missing_ids))
+            else:
+                for pid, qty in counts.items():
+                    try:
+                        r = requests.patch(
+                            f"{API_BASE_URL}/products/{pid}/stock",
+                            params={"stock_change": -qty},
+                            timeout=5,
+                        )
+                        if r.status_code != 200:
+                            ok = False
+                            st.error(f"Error actualizando stock: {r.text}")
+                    except Exception as e:
+                        ok = False
+                        st.error(f"Error conectando al backend: {e}")
+
+            if ok:
+                st.session_state.carrito.clear()
+                st.success("Compra realizada con éxito 🎉")
+                st.balloons()
+
+
+# -------- CHATBOT--------
 elif pagina == "Chatbot":
-    st.header("🤖 Chatbot de productos")
+    st.header("🤖 Asistente Virtual ElectroShop")
+    
+    if st.button("Limpiar historial de chat"):
+        st.session_state.chat_history = []
+        st.rerun()
 
-    pregunta = st.text_input(
-        "Pregunta por un producto",
-        placeholder="Ej: especificaciones de la RAM DDR4 16GB"
-    )
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
-    if st.button("Consultar"):
-        st.info("Función chatbot pendiente de implementar")
+    for role, text in st.session_state.chat_history:
+        with st.chat_message(role):
+            st.markdown(text)
+
+    if prompt := st.chat_input("¿En qué puedo ayudarte?"):
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.chat_history.append(("user", prompt))
+
+        with st.chat_message("assistant"):
+            try:
+                resp = requests.post("http://127.0.0.1:8000/chat/", json={"question": prompt}, timeout=15)
+                respuesta = resp.json().get("response", "Sin respuesta del servidor.")
+            except Exception as e:
+                respuesta = f"🔌 Error de conexión: {str(e)}"
+            
+            st.markdown(respuesta)
+            st.session_state.chat_history.append(("assistant", respuesta))

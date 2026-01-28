@@ -1,121 +1,100 @@
-## 📘 README.md – ProyectoIA
+# 🖥️ ElectroShop – Tienda de productos electrónicos
 
-```markdown
-# 🤖 ProyectoIA – Chatbot de Productos Electrónicos
-
-Este proyecto es una aplicación web desarrollada con **Python + Streamlit** que implementa un **chatbot** capaz de responder preguntas sobre **productos electrónicos** (RAM, discos SSD, etc.).
-
-El objetivo es servir como base para proyectos de **Fundamentos de IA**, combinando frontend sencillo y lógica de chatbot.
+Aplicación web full-stack con **FastAPI + MongoDB** (backend) y **Streamlit** (frontend) para gestionar y comprar productos electrónicos. Incluye stock en tiempo real, carrito dinámico y UI moderna.
 
 ---
 
-## 🛠️ Tecnologías usadas
+## 🛠️ Stack
 
-- Python 3.10+
-- Streamlit
-- Git
-- (Opcional) Modelos de IA / APIs
+- **Backend**: FastAPI + Motor (MongoDB async)
+- **Frontend**: Streamlit
+- **Base de datos**: MongoDB (`electroshop`)
+- **Python**: 3.13 (recomendado)
 
 ---
 
-## 📂 Estructura del proyecto
+## 📂 Estructura
 
 ```
-
-FundamentosIA/
-│
-├── app.py          # Frontend (Streamlit)
-├── chatbot.py      # Lógica del chatbot
+ProyectoIA/
+├── backend/
+│   ├── main.py          # App FastAPI (CRUD + stock)
+│   ├── models.py        # Esquemas Pydantic
+│   ├── crud.py          # Operaciones MongoDB
+│   ├── database.py      # Conexión a MongoDB
+│   ├── requirements.txt
+│   └── README.md        # Instrucciones del backend
+├── app.py              # Frontend Streamlit
 ├── .gitignore
 └── README.md
-
-````
+```
 
 ---
 
-## 🚀 Cómo clonar y ejecutar el proyecto
+## 🚀 Ejecutar el proyecto
 
-### 1️⃣ Clonar el repositorio
+### 1️⃣ Requisitos
+
+- **MongoDB** corriendo en `mongodb://localhost:27017`
+- **Python 3.13** (evita incompatibilidad con Pydantic/FastAPI)
+
+### 2️⃣ Backend (FastAPI)
 
 ```bash
-git clone https://github.com/Alejandro05-afk/ProyectoIA.git
-cd ProyectoIA
-````
+cd backend
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
 
----
+- **API Docs**: http://localhost:8000/docs
+- **Productos seed**: se cargan automáticamente si la colección está vacía.
 
-### 2️⃣ Crear un entorno virtual (recomendado)
+### 3️⃣ Frontend (Streamlit)
 
-#### En Windows (PowerShell o Git Bash):
+En otra terminal:
 
 ```bash
-python -m venv .venv
+streamlit run app.py --server.port 8502
 ```
 
-Activar el entorno virtual:
-
-```bash
-.venv\Scripts\activate
-```
-
-> Si estás en Git Bash:
-
-```bash
-source .venv/Scripts/activate
-```
+- Acceso: http://localhost:8502
 
 ---
 
-### 3️⃣ Instalar dependencias
+## 📦 Funcionalidades
 
-```bash
-pip install streamlit
-```
-
-(Si luego agregas más librerías, se recomienda usar `requirements.txt`)
-
----
-
-### 4️⃣ Ejecutar la aplicación
-
-```bash
-streamlit run app.py
-```
-
-📌 Streamlit abrirá automáticamente el navegador en:
-
-```
-http://localhost:8501
-```
+- ✅ Listado de productos con stock real
+- ✅ Filtros por categoría
+- ✅ Carrito dinámico con controles **➖/➕**
+- ✅ Actualización automática de stock en MongoDB al comprar
+- ✅ Botón “Actualizar productos” para refrescar desde el backend
+- ✅ UI moderna con CSS personalizado
 
 ---
 
-## 💬 Uso de la aplicación
+## 🔧 Endpoints clave (Backend)
 
-* Navega por el menú lateral
-* Interactúa con el chatbot escribiendo preguntas sobre productos
-* El chatbot responde según la lógica definida en `chatbot.py`
-
----
-
-## 🧠 Próximas mejoras
-
-* Integrar IA (OpenAI o modelo local)
-* Base de datos de productos
-* Chat estilo WhatsApp
-* Despliegue en la nube (Streamlit Cloud)
+- `GET /products/` – Listar productos (paginación, filtros)
+- `PATCH /products/{id}/stock?stock_change=N` – Actualizar stock
+- `GET /initialize/` – Cargar productos iniciales (seed)
 
 ---
 
-## 👤 Autor
+## 📝 Notas
 
+- Si el backend no responde, el frontend usa productos locales (fallback).
+- El stock se valida en backend: no permite valores negativos.
+- Los productos se identifican por `_id` (MongoDB) o `nombre` (fallback).
+
+---
+
+## 👤 Autores
+**Mateo Barba**
 **Alejandro Guanoluisa**
-Proyecto académico – EPN
-Repositorio:
-👉 [https://github.com/Alejandro05-afk/ProyectoIA](https://github.com/Alejandro05-afk/ProyectoIA)
-
-````
-
----
+**Andrés Panchi**  
+Proyecto académico – EPN  
+Repositorio: https://github.com/Alejandro05-afk/ProyectoIA
 
 
