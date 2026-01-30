@@ -26,6 +26,17 @@ class ChatRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await Database.connect_to_mongodb()
+    
+    # Inicializar datos si estamos en producción (Atlas)
+    import os
+    mongodb_url = os.getenv("MONGODB_URL", "")
+    if "mongodb+srv" in mongodb_url:
+        try:
+            from init_atlas_data import initialize_atlas_data
+            await initialize_atlas_data()
+        except Exception as e:
+            print(f"⚠️ No se pudieron inicializar datos en Atlas: {e}")
+    
     yield
     await Database.disconnect_from_mongodb()
 
