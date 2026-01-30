@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: electroshop-backend
+    env: python
+    plan: free
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && python main.py
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.0
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URL
+        sync: false
+      - key: DATABASE_NAME
+        value: electroshop
+      - key: COLLECTION_NAME
+        value: electroshop
+      - key: GROQ_API_KEY
+        sync: false
