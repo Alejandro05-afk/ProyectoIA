@@ -11,7 +11,7 @@ st.set_page_config(
 
 API_BASE_URL = os.getenv(
     "BACKEND_URL",
-    "http://localhost:8000"   # local
+    "https://electroshop-backend-9xa5.onrender.com"   
 )
 
 # ================== ESTILOS ==================
