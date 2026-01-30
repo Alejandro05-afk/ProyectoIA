@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import os
 
 # -------- CONFIGURACIÓN --------
 st.set_page_config(
@@ -7,6 +8,8 @@ st.set_page_config(
     page_icon="💻",
     layout="wide"
 )
+
+API_BASE_URL = os.getenv("RAILWAY_URL", "http://localhost:8000")
 
 st.markdown("""
 <style>
@@ -243,7 +246,7 @@ productos = [
     }
 ]
 
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = os.getenv("RAILWAY_URL", "http://localhost:8000")
 
 def _fetch_products_from_api():
     try:
