@@ -1,3 +1,8 @@
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))  # Agrega la carpeta backend al path
+
+
 from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
