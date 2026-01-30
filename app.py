@@ -2,148 +2,164 @@ import os
 import streamlit as st
 import requests
 
-# -------- CONFIGURACIÓN --------
+# ================== CONFIG ==================
 st.set_page_config(
     page_title="ElectroShop",
     page_icon="💻",
     layout="wide"
 )
 
-# URL DEL BACKEND (Render)
-API_BASE_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+API_BASE_URL = os.getenv(
+    "BACKEND_URL",
+    "http://localhost:8000"   # local
+)
 
-# -------- ESTILOS --------
+# ================== ESTILOS ==================
 st.markdown("""
 <style>
-.stApp {
-    background: linear-gradient(135deg, #0F172A, #020617);
-    color: white;
-}
-
-header[data-testid="stHeader"] {
-    background-color: #020617 !important;
-    border-bottom: 1px solid #00ADB5;
-}
-
-[data-testid="stSidebar"] {
-    background-color: #020617;
-    border-right: 1px solid #00ADB5;
-}
-
-[data-testid="stSidebar"] * {
-    color: white !important;
-}
-
-[data-testid="column"] {
-    background: linear-gradient(145deg, #0a0f1e, #020617);
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0,173,181,0.4);
-    border: 1px solid rgba(0,173,181,0.2);
-}
-
-h1, h2, h3 {
-    color: #00ADB5 !important;
-}
+.stApp { background: linear-gradient(135deg, #0F172A, #020617); color: white; }
+h1, h2, h3 { color: #00ADB5; }
 </style>
 """, unsafe_allow_html=True)
 
-# -------- ESTADO --------
+# ================== ESTADO ==================
 if "carrito" not in st.session_state:
     st.session_state.carrito = []
 
-if "mensaje" not in st.session_state:
-    st.session_state.mensaje = None
-
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-# -------- PRODUCTOS LOCALES (fallback) --------
-productos_locales = [
-    {
-        "nombre": "RAM DDR4 16GB",
-        "precio": 65,
-        "categoria": "Memoria",
-        "imagen": "https://nomadaware.com.ec/wp-content/uploads/VENG_LPX_BLK_01.png"
-    },
-    {
-        "nombre": "GPU RTX 4060",
-        "precio": 420,
-        "categoria": "Tarjetas Gráficas",
-        "imagen": "https://d2vfia6k6wrouk.cloudfront.net/productimages/6a308493-0e0b-4aff-b164-b00600f6f3f9/images/pny-rtx-4060-ti-8gb-verto-dual-fan-ra.png"
-    }
-]
-
-# -------- FUNCIONES --------
+# ================== API ==================
 def fetch_products():
     try:
-        r = requests.get(f"{API_BASE_URL}/products/", params={"per_page": 100}, timeout=5)
+        r = requests.get(
+            f"{API_BASE_URL}/products/",
+            params={"per_page": 100},
+            timeout=10
+        )
         if r.status_code == 200:
-            return r.json().get("products", productos_locales)
-    except Exception:
-        pass
-    return productos_locales
+            return r.json().get("products", [])
+    except Exception as e:
+        st.error(f"Error cargando productos: {e}")
+    return []
 
-# -------- SIDEBAR --------
+# ================== SIDEBAR ==================
 st.sidebar.title("🛒 ElectroShop")
 pagina = st.sidebar.radio(
     "Navegación",
     ["Inicio", "Productos", "Carrito", "Chatbot"]
 )
 
-# -------- INICIO --------
+# ================== INICIO ==================
 if pagina == "Inicio":
     st.title("💻 ElectroShop")
-    st.subheader("Tu tienda de tecnología inteligente")
-    st.image("https://cdn-icons-png.flaticon.com/512/2777/2777142.png", width=200)
+    st.subheader("Tu tienda de artículos electrónicos")
+    st.image(
+        "https://cdn-icons-png.flaticon.com/512/2777/2777142.png",
+        width=200
+    )
 
-# -------- PRODUCTOS --------
+# ================== PRODUCTOS ==================
 elif pagina == "Productos":
     st.header("📦 Productos disponibles")
 
     productos = fetch_products()
 
-    cols = st.columns(3)
-    for i, producto in enumerate(productos):
-        with cols[i % 3]:
-            st.image(producto.get("imagen"), width=220)
-            st.subheader(producto.get("nombre"))
-            st.caption(producto.get("categoria"))
-            st.write(f"💲 **${producto.get('precio')}**")
+    if not productos:
+        st.warning("No hay productos disponibles")
+        st.stop()
 
-            if st.button("Agregar 🛒", key=f"add_{i}"):
-                st.session_state.carrito.append(producto)
-                st.success("Producto agregado")
+    for i in range(0, len(productos), 3):
+        cols = st.columns(3)
+        for j in range(3):
+            if i + j < len(productos):
+                p = productos[i + j]
+                with cols[j]:
+                    st.image(p.get("imagen"), width=220)
+                    st.subheader(p.get("nombre"))
+                    st.caption(p.get("categoria"))
+                    st.write(f"💲 **${p.get('precio')}**")
 
-# -------- CARRITO --------
+                    stock = p.get("stock")
+                    if stock is not None:
+                        if stock <= 0:
+                            st.error("Sin stock")
+                        else:
+                            st.write(f"Stock: {stock}")
+
+                    if st.button(
+                        "Agregar 🛒",
+                        key=f"add_{p.get('_id')}"
+                    ):
+                        st.session_state.carrito.append(p)
+                        st.success("Agregado al carrito")
+
+# ================== CARRITO ==================
 elif pagina == "Carrito":
-    st.header("🧾 Carrito")
+    st.header("🧾 Carrito de compras")
 
     if not st.session_state.carrito:
         st.info("Tu carrito está vacío")
-    else:
-        total = 0
-        for p in st.session_state.carrito:
-            st.write(f"- {p['nombre']} (${p['precio']})")
-            total += p["precio"]
+        st.stop()
 
-        st.subheader(f"💰 Total: ${total}")
+    conteo = {}
+    total = 0
 
-        if st.button("Finalizar compra"):
+    for p in st.session_state.carrito:
+        pid = p.get("_id") or p.get("id")
+        if not pid:
+            st.error(f"Producto sin ID: {p.get('nombre', 'Desconocido')}")
+            continue
+        conteo[pid] = conteo.get(pid, 0) + 1
+        total += p.get("precio", 0)
+
+    for pid, qty in conteo.items():
+        prod = next((p for p in st.session_state.carrito if (p.get("_id") or p.get("id")) == pid), None)
+        if prod:
+            st.write(f"✔ {prod['nombre']} x{qty} — ${prod['precio'] * qty}")
+        else:
+            st.write(f"✔ Producto ID {pid} x{qty}")
+
+    st.subheader(f"💰 Total: ${total}")
+
+    if st.button("Finalizar compra"):
+        ok = True
+        actualizados = []
+        for pid, qty in conteo.items():
+            try:
+                r = requests.patch(
+                    f"{API_BASE_URL}/products/{pid}/stock",
+                    params={"stock_change": -qty},
+                    timeout=10
+                )
+                if r.status_code == 200:
+                    actualizados.append(f"{pid}: -{qty}")
+                else:
+                    ok = False
+                    st.error(f"Error actualizando {pid}: {r.text}")
+            except Exception as e:
+                ok = False
+                st.error(f"Error de conexión: {e}")
+
+        if ok:
+            st.success(f"✅ Stock actualizado: {', '.join(actualizados)}")
             st.session_state.carrito.clear()
-            st.success("Compra realizada 🎉")
+            st.success("Compra realizada con éxito 🎉")
             st.balloons()
 
-# -------- CHATBOT --------
+# ================== CHATBOT ==================
 elif pagina == "Chatbot":
-    st.header("🤖 Asistente ElectroShop")
+    st.header("🤖 Asistente Virtual ElectroShop")
 
-    for role, msg in st.session_state.chat_history:
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    for role, text in st.session_state.chat_history:
         with st.chat_message(role):
-            st.markdown(msg)
+            st.markdown(text)
 
     if prompt := st.chat_input("¿En qué puedo ayudarte?"):
+        with st.chat_message("user"):
+            st.markdown(prompt)
         st.session_state.chat_history.append(("user", prompt))
+
         with st.chat_message("assistant"):
             try:
                 r = requests.post(
@@ -153,7 +169,7 @@ elif pagina == "Chatbot":
                 )
                 respuesta = r.json().get("response", "Sin respuesta")
             except Exception as e:
-                respuesta = f"❌ Error conectando al backend: {e}"
+                respuesta = f"Error: {e}"
 
             st.markdown(respuesta)
             st.session_state.chat_history.append(("assistant", respuesta))

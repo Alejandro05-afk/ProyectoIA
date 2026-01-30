@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 # Configuración de la base de datos
 load_dotenv()
 
-# MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")  # Conexión a MongoDB LOCAL
-MONGODB_URL = "mongodb+srv://kogamaandres_db_user:fwsAYpZWhHb6Anq1@electroshop.q0k2ovr.mongodb.net/?appName=electroshop"  # Conexión a MongoDB ATLAS
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")  # Conexión a MongoDB LOCAL por defecto
+# MONGODB_URL = "mongodb+srv://kogamaandres_db_user:fwsAYpZWhHb6Anq1@electroshop.q0k2ovr.mongodb.net/electroshop?retryWrites=true&w=majority"  # Conexión a MongoDB ATLAS
 
 DATABASE_NAME = os.getenv("DATABASE_NAME", "electroshop")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "electroshop")

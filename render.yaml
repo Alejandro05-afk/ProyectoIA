@@ -5,16 +5,19 @@ services:
     plan: free
 
     buildCommand: cd backend && pip install -r requirements.txt
-    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: cd backend && python main.py
 
     healthCheckPath: /health
 
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.13
+        value: 3.13.0
+
+      - key: PORT
+        value: 10000
 
       - key: MONGODB_URL
-        sync: false
+        value: mongodb+srv://kogamaandres_db_user:fwsAYpZWhHb6Anq1@electroshop.q0k2ovr.mongodb.net/electroshop?retryWrites=true&w=majority
 
       - key: DATABASE_NAME
         value: electroshop
@@ -23,4 +26,4 @@ services:
         value: electroshop
 
       - key: GROQ_API_KEY
-        sync: false
+        value: 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
