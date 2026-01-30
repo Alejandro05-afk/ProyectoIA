@@ -23,64 +23,53 @@ El núcleo inteligente del sistema se basa en un **Chatbot Asistente** diseñado
 ---
 
 ## 📂 Estructura del Proyecto
-
-```text
-ProyectoIA/
-├── backend/
-│   ├── main.py          # Orquestador FastAPI: Manejo de rutas, stock e integración de IA.
-│   ├── chatbot.py       # Cerebro de IA: Integración con Groq SDK y lógica de Llama 3.3.
-│   ├── crud.py          # Operaciones MongoDB: Persistencia asíncrona y lógica de inventario.
-│   ├── models.py        # Esquemas Pydantic: Estructura de datos y productos técnicos iniciales.
-│   ├── database.py      # Configuración de conexión asíncrona a MongoDB.
-│   └── requirements.txt # Dependencias del servidor (FastAPI, Groq, Motor).
-├── app.py               # Frontend interactivo: Interfaz en Streamlit y lógica de carrito.
-├── .gitignore           # Archivo para excluir entornos virtuales y archivos sensibles.
-└── README.md            # Documentación técnica del proyecto.
 ```
-
----
-
-## 🚀 Instalación y Ejecución
-
-### 1️⃣ Requisitos Previos
-* **MongoDB** activo en `mongodb://localhost:27017`.
 
 ### 2️⃣ Backend (FastAPI)
 ```bash
 cd backend
 python -m venv venv
-.\venv\Scripts\activate
+.\venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-- **Poblar Inventario**: Es obligatorio acceder a http://localhost:8000/initialize/ para cargar los productos técnicos optimizados para la IA en MongoDB.
-
-### 3️⃣ Frontend (Streamlit)
-
-En otra terminal:
-
+### 3️⃣ Frontend (Streamlit) - En otra terminal
 ```bash
 streamlit run app.py --server.port 8502
 ```
 
-- Acceso: http://localhost:8502
+### 4️⃣ Acceso
+- **Frontend**: http://localhost:8502
+- **Backend API**: http://localhost:8000/docs
+- **Inicializar productos**: http://localhost:8000/initialize/
 
 ---
 
-## 📦 Funcionalidades Principales
+## 🛠️ Stack
 
-* ✅ **Asistente Experto en IA**: Analiza términos técnicos (Hz, latencias, arquitecturas) del inventario para brindar asesoría real al usuario.
-* ✅ **Gestión de Stock Real**: Listado de productos con actualización automática en MongoDB al realizar una compra exitosa.
-* ✅ **Filtros Dinámicos**: Búsqueda avanzada por categoría y rangos de precio sincronizados directamente con la base de datos.
-* ✅ **Carrito de Compras**: Control de unidades (**➖/➕**) con validación de stock en el backend para evitar inventarios negativos.
-* ✅ **Sincronización de IA**: El chatbot detecta si un producto está agotado en la base de datos antes de recomendarlo al cliente.
-* ✅ **UI Moderna**: Interfaz intuitiva desarrollada en Streamlit con CSS personalizado para una experiencia de usuario fluida.
+- **Backend**: FastAPI + Motor (MongoDB async)
+- **Frontend**: Streamlit
+- **Base de datos**: MongoDB Atlas
+- **Python**: 3.13 (recomendado)
 
 ---
 
-## 🔧 Endpoints Clave (Backend)
+## 📂 Estructura
 
+```text
+ProyectoIA/
+├── backend/
+│   ├── main.py          # App FastAPI (CRUD + stock)
+│   ├── models.py        # Esquemas Pydantic + productos iniciales
+│   ├── crud.py          # Operaciones MongoDB
+│   ├── database.py      # Conexión a MongoDB Atlas
+│   ├── .env             # Variables de entorno (NO subir a Git)
+│   └── requirements.txt
+├── app.py              # Frontend Streamlit
+├── .gitignore
+└── README.md
+```
 * `GET /products/` – Listar productos con soporte para paginación y filtros.
 * `POST /chat/` – Orquestador que procesa las consultas del usuario mediante la IA de Groq.
 * `PATCH /products/{id}/stock?stock_change=N` – Actualización atómica de existencias.
